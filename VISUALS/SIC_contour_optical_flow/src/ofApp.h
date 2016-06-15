@@ -67,4 +67,7 @@ class ofApp : public ofBaseApp{
 		ofxOscMessage mx;
 		ofxOscMessage my;
 
+		float timeBetweenSendMessage;
+		float initTimeSendMessage;
+
 };

@@ -1,16 +1,16 @@
 #pragma once
 
-#define MAX_LENGTH                  100
+#define MAX_LENGTH_CENTROID         20
 #define MAX_LENGTH_OPTICAL_FLOW     10
 
 #include "ofMain.h"
 
 class OpticalFlowVector{
     public:
-        vector <ofPoint> points;
+        vector <ofPoint> centroidpoints;
         deque <ofPoint> opticalflows;
         int currentPosition;
-        int length = MAX_LENGTH;
+        int length = MAX_LENGTH_CENTROID;
 
         OpticalFlowVector(){};
 
@@ -19,7 +19,7 @@ class OpticalFlowVector{
             for(int i=0; i<length; i++){
               ofPoint p;
               p.set(0,0);
-              points.push_back(p);
+              centroidpoints.push_back(p);
             }
 
             for(int i=0; i<MAX_LENGTH_OPTICAL_FLOW; i++){
@@ -30,12 +30,12 @@ class OpticalFlowVector{
         }
 
         void setLengthAndReset(int l){
-            length = max(l, MAX_LENGTH);
-            points.resize(length); // allocate space
-            for(int i=0; i<points.size(); i++){
+            length = max(l, MAX_LENGTH_CENTROID);
+            centroidpoints.resize(length); // allocate space
+            for(int i=0; i<centroidpoints.size(); i++){
               ofPoint p;
               p.set(0,0);
-              points[i] = p;
+              centroidpoints[i] = p;
             }
         }
 
@@ -66,19 +66,19 @@ class OpticalFlowVector{
         }
 
         void setPointAt(int index, ofPoint p){
-            points[index] = p;
+            centroidpoints[index] = p;
         }
 
         ofPoint getPointAt(int index){
-            return points[index];
+            return centroidpoints[index];
         }
 
         void setPoint(ofPoint p){
-            points[currentPosition] = p;
+            centroidpoints[currentPosition] = p;
         }
 
         ofPoint getPoint(){
-            return points[currentPosition];
+            return centroidpoints[currentPosition];
         }
 
         ofPoint getOpticalFlow(int numStepsBefore){
@@ -91,12 +91,12 @@ class OpticalFlowVector{
             return opticalflows[index];
         }
 
-        void setOF(ofPoint p){
+        void setOpticalFlow(ofPoint p){
             opticalflows.pop_front();
             opticalflows.push_back(p);
         }
 
-        ofPoint getSmoothOF(){
+        ofPoint getSmoothOpticalFlow(){
             ofPoint res;
             res.set(0,0);
             for(int i=0; i<MAX_LENGTH_OPTICAL_FLOW-1; i++){

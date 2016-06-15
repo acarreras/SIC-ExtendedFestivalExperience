@@ -30,6 +30,8 @@ void ofApp::setup(){
 	relAspectX = w/camWidth;
 	relAspectY = h/camHeight;
 
+	timeBetweenSendMessage = 500;
+
 	// GUI
     gui = new ofxUISuperCanvas("SONAR INNOVATION CHALLENGE 2016", 0,0, w, h);
     gui->addSpacer();
@@ -41,6 +43,8 @@ void ofApp::setup(){
     gui->addSlider("minBlobSize", 20, 9000, &minBlobSize);
     gui->addSlider("maxBlobSize", 2000, w*h, &maxBlobSize);
     gui->addSlider("numBlobs", 0, 10, &numBlobs)->setIncrement(1);
+    gui->addSpacer();
+    gui->addSlider("timeBetweenSendMessage(ms)", 10, 3000, &timeBetweenSendMessage);
 
     gui->autoSizeToFitWidgets();
     ofAddListener(gui->newGUIEvent,this,&ofApp::guiEvent);
@@ -51,6 +55,7 @@ void ofApp::setup(){
 
     // OSC
     sender.setup(HOST, PORT);
+    initTimeSendMessage = ofGetElapsedTimeMillis();
 
 }
 
@@ -74,10 +79,18 @@ void ofApp::update(){
         contourFinder.findContours(grayTh, minBlobSize, maxBlobSize, numBlobs, false);
 
         if(contourFinder.nBlobs > 0){
-            float cx = contourFinder.blobs[0].boundingRect.getCenter().x; // / camWidth; // normalized
-            float cy = contourFinder.blobs[0].boundingRect.getCenter().y; // / camHeight;
-            ofvector.setPoint(ofPoint(cx,cy));
+            // centroid
+            centerX = contourFinder.blobs[0].boundingRect.getCenter().x; // / camWidth; // normalized
+            centerY = contourFinder.blobs[0].boundingRect.getCenter().y; // / camHeight;
+            ofvector.setPoint(ofPoint(centerX,centerY));
             ofvector.getNextPositionAndMoveToIt();
+
+            // current optical flow
+            resultOpticalFlow = ofvector.getOpticalFlow(5);
+
+            // smoothed optical flow
+            ofvector.setOpticalFlow(resultOpticalFlow);
+            smoothOpticalFlow = ofvector.getSmoothOpticalFlow();
         }
     }
 
@@ -89,40 +102,44 @@ void ofApp::draw(){
     grayImage.draw(w*0.5,0,camWidth*0.3, camHeight*0.3);
     grayTh.draw(w*0.5+camWidth*0.3,0,camWidth*0.3, camHeight*0.3);
 
-    if(contourFinder.nBlobs > 0){
-        // we have somebody there
+    if(contourFinder.nBlobs > 0){ // we have somebody there
+        // center of mass, blob centroid
         ofSetColor(255,255,0);
         ofFill();
-        centerX = contourFinder.blobs[0].boundingRect.getCenter().x * relAspectX;
-        centerY = contourFinder.blobs[0].boundingRect.getCenter().y * relAspectY;
-        ofEllipse(centerX,centerY,15,15);
+        ofEllipse(centerX * relAspectX, centerY * relAspectY,15,15);
+
+        // current optical flow
+        ofSetColor(255,0,0);
+        ofLine(centerX*relAspectX, centerY*relAspectY, (centerX+resultOpticalFlow.x)*relAspectX, (centerY+resultOpticalFlow.y)*relAspectY);
+
+        // smoothed optical flow
+        ofSetColor(0,255,0);
+        ofLine(centerX*relAspectX, centerY*relAspectY, (centerX+smoothOpticalFlow.x)*relAspectX, (centerY+smoothOpticalFlow.y)*relAspectY);
+        ofRect((centerX+resultOpticalFlow.x)*relAspectX, (centerY+resultOpticalFlow.y)*relAspectY, 3, 3);
+
+        if(initTimeSendMessage - ofGetElapsedTimeMillis() > timeBetweenSendMessage){
+            mx.clear();
+            mx.setAddress("/opticalflowX");
+            mx.addFloatArg(smoothOpticalFlow.x);
+            sender.sendMessage(mx);
+
+            my.clear();
+            my.setAddress("/opticalflowY");
+            my.addFloatArg(smoothOpticalFlow.y);
+            sender.sendMessage(my);
+
+            initTimeSendMessage = ofGetElapsedTimeMillis();
+        }
+        contourFinder.draw(0,0,w,h);
     }
-    contourFinder.draw(0,0,w,h);
 
     ofSetColor(200);
-    ofDrawBitmapString("optical flow vector values: ", 20, 20);
+    ofDrawBitmapString("smooth optical flow: " + ofToString(smoothOpticalFlow.x) + "," + ofToString(smoothOpticalFlow.y), 20, 380);
+    ofDrawBitmapString("optical flow vector values: ", 20, 400);
     for(int i=0; i<ofvector.getLength(); i++){
-        ofDrawBitmapString( ofToString(ofvector.getPoint().x) + "," + ofToString(ofvector.getPoint().y), 20, 40+15*i);
+        ofDrawBitmapString( ofToString(ofvector.getPoint().x) + "," + ofToString(ofvector.getPoint().y), 20, 420+15*i);
     }
 
-    resultOpticalFlow = ofvector.getOpticalFlow(5);
-    ofvector.setOF(resultOpticalFlow);
-    smoothOpticalFlow = ofvector.getSmoothOF();
-    ofSetColor(255,0,0);
-    ofLine(centerX, centerY, centerX+resultOpticalFlow.x, centerY+resultOpticalFlow.y);
-
-    mx.clear();
-    mx.setAddress("/opticalflowX");
-    mx.addFloatArg(smoothOpticalFlow.x);
-    sender.sendMessage(mx);
-
-    my.clear();
-    my.setAddress("/opticalflowY");
-    my.addFloatArg(smoothOpticalFlow.y);
-    sender.sendMessage(my);
-
-    ofSetColor(200);
-    ofDrawBitmapString("smooth optical flow: " + ofToString(smoothOpticalFlow.x) + "," + ofToString(smoothOpticalFlow.y), 200, 20);
 }
 
 //--------------------------------------------------------------
