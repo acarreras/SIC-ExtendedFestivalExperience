@@ -60,6 +60,7 @@ class ofApp : public ofBaseApp{
 		// OPTICAL FLOW
 		OpticalFlowVector ofvector;
 		ofPoint resultOpticalFlow;
+		ofPoint smoothOpticalFlow;
 
 		// OSC
 		ofxOscSender sender;

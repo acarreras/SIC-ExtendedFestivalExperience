@@ -6,6 +6,7 @@ void ofApp::setup(){
     // APP
     ofSetLogLevel(OF_LOG_SILENT);
     ofSetVerticalSync(true);
+    //ofSetFrameRate(25);
     //ofHideCursor();
     w = ofGetWidth();
     h = ofGetHeight();
@@ -105,16 +106,23 @@ void ofApp::draw(){
     }
 
     resultOpticalFlow = ofvector.getOpticalFlow(5);
-    ofSetColor(200,55,0);
+    ofvector.setOF(resultOpticalFlow);
+    smoothOpticalFlow = ofvector.getSmoothOF();
+    ofSetColor(255,0,0);
     ofLine(centerX, centerY, centerX+resultOpticalFlow.x, centerY+resultOpticalFlow.y);
 
+    mx.clear();
     mx.setAddress("/opticalflowX");
-    mx.addFloatArg(resultOpticalFlow.x);
+    mx.addFloatArg(smoothOpticalFlow.x);
     sender.sendMessage(mx);
 
+    my.clear();
     my.setAddress("/opticalflowY");
-    my.addFloatArg(resultOpticalFlow.y);
+    my.addFloatArg(smoothOpticalFlow.y);
     sender.sendMessage(my);
+
+    ofSetColor(200);
+    ofDrawBitmapString("smooth optical flow: " + ofToString(smoothOpticalFlow.x) + "," + ofToString(smoothOpticalFlow.y), 200, 20);
 }
 
 //--------------------------------------------------------------
