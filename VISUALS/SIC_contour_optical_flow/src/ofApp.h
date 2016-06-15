@@ -3,8 +3,13 @@
 #include "ofMain.h"
 #include "ofxUI.h"
 #include "ofxOpenCv.h"
+#include "ofxOsc.h"
 
 #include "OpticalFlowVector.h"
+
+#define HOST "localhost"
+#define PORT 12345
+
 
 class ofApp : public ofBaseApp{
 
@@ -55,5 +60,10 @@ class ofApp : public ofBaseApp{
 		// OPTICAL FLOW
 		OpticalFlowVector ofvector;
 		ofPoint resultOpticalFlow;
+
+		// OSC
+		ofxOscSender sender;
+		ofxOscMessage mx;
+		ofxOscMessage my;
 
 };

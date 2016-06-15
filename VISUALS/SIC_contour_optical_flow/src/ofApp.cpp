@@ -48,6 +48,9 @@ void ofApp::setup(){
     // OPTICAL FLOW
     ofvector.init();
 
+    // OSC
+    sender.setup(HOST, PORT);
+
 }
 
 //--------------------------------------------------------------
@@ -104,6 +107,14 @@ void ofApp::draw(){
     resultOpticalFlow = ofvector.getOpticalFlow(5);
     ofSetColor(200,55,0);
     ofLine(centerX, centerY, centerX+resultOpticalFlow.x, centerY+resultOpticalFlow.y);
+
+    mx.setAddress("/opticalflowX");
+    mx.addFloatArg(resultOpticalFlow.x);
+    sender.sendMessage(mx);
+
+    my.setAddress("/opticalflowY");
+    my.addFloatArg(resultOpticalFlow.y);
+    sender.sendMessage(my);
 }
 
 //--------------------------------------------------------------
